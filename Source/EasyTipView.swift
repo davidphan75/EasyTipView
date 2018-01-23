@@ -546,7 +546,7 @@ open class EasyTipView: UIView {
         
         let textRect = CGRect(x: bubbleFrame.origin.x + (bubbleFrame.size.width - textSize.width) / 2, y: bubbleFrame.origin.y + (bubbleFrame.size.height - textSize.height) / 2, width: textSize.width, height: textSize.height)
         
-        let usableTextRect = preferences.drawing.drawCloseIndicator ? CGRect(x: textRect.origin.x, y: textRect.origin.y, width: textRect.size.width - closeButtonSize.width, height: textRect.size.height) : textRect
+        let usableTextRect = preferences.drawing.drawCloseIndicator ? CGRect(x: textRect.origin.x, y: textRect.origin.y, width: textRect.size.width - closeButtonSize.width + preferences.positioning.textHInset, height: textRect.size.height) : textRect
         let closeRect = CGRect(x: textRect.origin.x + textRect.size.width - closeButtonSize.width, y: textRect.origin.y, width: closeButtonSize.width, height: textRect.size.height)
         
         if attributedText == nil{
@@ -556,13 +556,10 @@ open class EasyTipView: UIView {
         }
         
         
-        
-        
-        
         guard let ctx = UIGraphicsGetCurrentContext(), preferences.drawing.drawCloseIndicator else { return }
         
         ctx.beginPath()
-        let closeWidth = (closeButtonSize.width)/3.5
+        let closeWidth = (closeButtonSize.width)/4.5
         let centerPT = CGPoint(x: closeRect.origin.x + closeRect.size.width/2 + preferences.positioning.textHInset/2, y: closeRect.origin.y + closeRect.size.height/2)
         ctx.move(to: centerPT)
         ctx.addLine(to: CGPoint(x: centerPT.x + closeWidth, y: centerPT.y + closeWidth))
@@ -585,6 +582,7 @@ open class EasyTipView: UIView {
         ctx.addLine(to: CGPoint(x: closeRect.origin.x, y: closeRect.origin.y + closeRect.height ))
         ctx.setLineWidth(1)
         ctx.closePath()
+        ctx.setAlpha(0.2)
         ctx.strokePath()
         
     }
