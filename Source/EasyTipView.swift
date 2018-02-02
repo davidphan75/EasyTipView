@@ -150,7 +150,7 @@ public extension EasyTipView {
 // MARK: - UIGestureRecognizerDelegate implementation
 
 extension EasyTipView: UIGestureRecognizerDelegate {
-
+    
     open override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         return preferences.animating.dismissOnTap
     }
@@ -271,11 +271,13 @@ open class EasyTipView: UIView {
         return textSize
         }()
     
+    fileprivate static let closeButtonWidth:CGFloat = 44
     fileprivate lazy var contentSize: CGSize = {
         
         [unowned self] in
-        
-        var contentSize = CGSize(width: self.textSize.width + self.preferences.positioning.textHInset * 2 + self.preferences.positioning.bubbleHInset * 2, height: self.textSize.height + self.preferences.positioning.textVInset * 2 + self.preferences.positioning.bubbleVInset * 2 + self.preferences.drawing.arrowHeight)
+        let width = self.textSize.width + self.preferences.positioning.textHInset * 2 + self.preferences.positioning.bubbleHInset * 2 + (self.preferences.drawing.drawCloseIndicator ? closeButtonWidth : 0)
+        let height = self.textSize.height + self.preferences.positioning.textVInset * 2 + self.preferences.positioning.bubbleVInset * 2 + self.preferences.drawing.arrowHeight
+        var contentSize = CGSize(width: width, height: height)
         
         return contentSize
         }()
@@ -542,51 +544,60 @@ open class EasyTipView: UIView {
         paragraphStyle.lineBreakMode = NSLineBreakMode.byWordWrapping
         
         
-        let closeButtonSize = CGSize(width: 20, height: 44)
+        //        let closeButtonSize = CGSize(width: 44, height: 44)
         
-        let textRect = CGRect(x: bubbleFrame.origin.x + (bubbleFrame.size.width - textSize.width) / 2, y: bubbleFrame.origin.y + (bubbleFrame.size.height - textSize.height) / 2, width: textSize.width, height: textSize.height)
+        let xPos = bubbleFrame.origin.x + (bubbleFrame.size.width - textSize.width) / 2 - preferences.positioning.textHInset - 10
+        let textRect = CGRect(x: xPos, y: bubbleFrame.origin.y + (bubbleFrame.size.height - textSize.height) / 2, width: textSize.width, height: textSize.height)
         
-        let usableTextRect = preferences.drawing.drawCloseIndicator ? CGRect(x: textRect.origin.x, y: textRect.origin.y, width: textRect.size.width - closeButtonSize.width, height: textRect.size.height) : textRect
-        let closeRect = CGRect(x: textRect.origin.x + textRect.size.width - closeButtonSize.width, y: textRect.origin.y, width: closeButtonSize.width, height: textRect.size.height)
+        //        let usableTextRect = preferences.drawing.drawCloseIndicator ? CGRect(x: textRect.origin.x, y: textRect.origin.y, width: textRect.size.width - closeButtonSize.width, height: textRect.size.height) : textRect
+        //        let closeRect = CGRect(x: textRect.origin.x + textRect.size.width - closeButtonSize.width, y: textRect.origin.y, width: closeButtonSize.width, height: textRect.size.height)
         
         if attributedText == nil{
-            text.draw(in: usableTextRect, withAttributes: [NSFontAttributeName : preferences.drawing.font, NSForegroundColorAttributeName : preferences.drawing.foregroundColor, NSParagraphStyleAttributeName : paragraphStyle])
+            text.draw(in: textRect, withAttributes: [NSFontAttributeName : preferences.drawing.font, NSForegroundColorAttributeName : preferences.drawing.foregroundColor, NSParagraphStyleAttributeName : paragraphStyle])
         }else{
-            attributedText?.draw(in: usableTextRect)
+            attributedText?.draw(in: textRect)
         }
         
         
         
-        
-        
+        if preferences.drawing.drawCloseIndicator{
+            drawCloseButton(bubbleFrame, context: context)
+            
+        }
+    }
+    fileprivate func drawCloseButton(_ bubbleFrame: CGRect, context : CGContext){
         guard let ctx = UIGraphicsGetCurrentContext(), preferences.drawing.drawCloseIndicator else { return }
         
+        let textRect = CGRect(x: bubbleFrame.origin.x + (bubbleFrame.size.width - textSize.width) / 2, y: bubbleFrame.origin.y + (bubbleFrame.size.height - textSize.height) / 2, width: textSize.width, height: textSize.height)
+        let closeRect = CGRect(x: textRect.origin.x + textRect.size.width  - preferences.positioning.textHInset , y: textRect.origin.y, width: EasyTipView.closeButtonWidth, height: textRect.size.height)
+        
         ctx.beginPath()
-        let closeWidth = (closeButtonSize.width)/3.5
-        let centerPT = CGPoint(x: closeRect.origin.x + closeRect.size.width/2 + preferences.positioning.textHInset/2, y: closeRect.origin.y + closeRect.size.height/2)
+        let lineWidth = (EasyTipView.closeButtonWidth)/10
+        let centerPT = CGPoint(x: closeRect.origin.x + EasyTipView.closeButtonWidth/2, y: closeRect.origin.y + closeRect.size.height/2)
         ctx.move(to: centerPT)
-        ctx.addLine(to: CGPoint(x: centerPT.x + closeWidth, y: centerPT.y + closeWidth))
+        ctx.addLine(to: CGPoint(x: centerPT.x + lineWidth, y: centerPT.y + lineWidth))
         
         ctx.move(to: centerPT)
-        ctx.addLine(to: CGPoint(x: centerPT.x - closeWidth, y: centerPT.y + closeWidth))
+        ctx.addLine(to: CGPoint(x: centerPT.x - lineWidth, y: centerPT.y + lineWidth))
         
         ctx.move(to: centerPT)
-        ctx.addLine(to: CGPoint(x: centerPT.x + closeWidth, y: centerPT.y - closeWidth))
+        ctx.addLine(to: CGPoint(x: centerPT.x + lineWidth, y: centerPT.y - lineWidth))
         
         ctx.move(to: centerPT)
-        ctx.addLine(to: CGPoint(x: centerPT.x - closeWidth, y: centerPT.y - closeWidth ))
+        ctx.addLine(to: CGPoint(x: centerPT.x - lineWidth, y: centerPT.y - lineWidth ))
         
         ctx.setLineWidth(2.5)
         ctx.closePath()
         ctx.strokePath()
         
         ctx.beginPath()
-        ctx.move(to: closeRect.origin)
-        ctx.addLine(to: CGPoint(x: closeRect.origin.x, y: closeRect.origin.y + closeRect.height ))
+        let startPT = CGPoint(x: closeRect.origin.x + 5.0, y: closeRect.origin.y)
+        ctx.move(to: startPT)
+        ctx.addLine(to: CGPoint(x: closeRect.origin.x + 5.0, y: closeRect.origin.y + closeRect.height ))
         ctx.setLineWidth(1)
+        ctx.setAlpha(0.2)
         ctx.closePath()
         ctx.strokePath()
-        
     }
     
     override open func draw(_ rect: CGRect) {
